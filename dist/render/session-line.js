@@ -1,9 +1,9 @@
-import { isLimitReached } from '../types.js';
-import { getContextPercent, getBufferedPercent, getModelName, getProviderLabel, getTotalTokens } from '../stdin.js';
-import { getOutputSpeed } from '../speed-tracker.js';
-import { coloredBar, critical, cyan, dim, magenta, red, warning, yellow, getContextColor, getQuotaColor, quotaBar, claudeOrange, RESET } from './colors.js';
-import { getAdaptiveBarWidth } from '../utils/terminal.js';
-const DEBUG = process.env.DEBUG?.includes('claude-hud') || process.env.DEBUG === '*';
+import { isLimitReached } from "../types.js";
+import { getContextPercent, getBufferedPercent, getModelName, getProviderLabel, getTotalTokens, } from "../stdin.js";
+import { getOutputSpeed } from "../speed-tracker.js";
+import { coloredBar, critical, cyan, dim, magenta, red, warning, yellow, getContextColor, getQuotaColor, quotaBar, claudeOrange, RESET, } from "./colors.js";
+import { getAdaptiveBarWidth } from "../utils/terminal.js";
+const DEBUG = process.env.DEBUG?.includes("claude-hud") || process.env.DEBUG === "*";
 /**
  * Renders the full session line (model + context bar + project + git + counts + usage + duration).
  * Used for compact layout mode.
@@ -12,17 +12,17 @@ export function renderSessionLine(ctx) {
     const model = getModelName(ctx.stdin);
     const rawPercent = getContextPercent(ctx.stdin);
     const bufferedPercent = getBufferedPercent(ctx.stdin);
-    const autocompactMode = ctx.config?.display?.autocompactBuffer ?? 'enabled';
-    const percent = autocompactMode === 'disabled' ? rawPercent : bufferedPercent;
-    if (DEBUG && autocompactMode === 'disabled') {
+    const autocompactMode = ctx.config?.display?.autocompactBuffer ?? "enabled";
+    const percent = autocompactMode === "disabled" ? rawPercent : bufferedPercent;
+    if (DEBUG && autocompactMode === "disabled") {
         console.error(`[claude-hud:context] autocompactBuffer=disabled, showing raw ${rawPercent}% (buffered would be ${bufferedPercent}%)`);
     }
     const colors = ctx.config?.colors;
     const barWidth = getAdaptiveBarWidth();
-    const bar = coloredBar(percent, barWidth, colors);
+    const bar = coloredBar(percent, barWidth, colors, ctx.config?.barChars);
     const parts = [];
     const display = ctx.config?.display;
-    const contextValueMode = display?.contextValue ?? 'percent';
+    const contextValueMode = display?.contextValue ?? "percent";
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
     const contextValueDisplay = `${getContextColor(percent, colors)}${contextValue}${RESET}`;
     // Model and context bar (FIRST)
@@ -31,7 +31,9 @@ export function renderSessionLine(ctx) {
     const showUsage = display?.showUsage !== false;
     const planName = showUsage ? ctx.usageData?.planName : undefined;
     const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
-    const billingLabel = showUsage ? (planName ?? (hasApiKey ? red('API') : undefined)) : undefined;
+    const billingLabel = showUsage
+        ? (planName ?? (hasApiKey ? red("API") : undefined))
+        : undefined;
     const planDisplay = providerLabel ?? billingLabel;
     const modelDisplay = planDisplay ? `${model} | ${planDisplay}` : model;
     if (display?.showModel !== false && display?.showContextBar !== false) {
@@ -54,17 +56,17 @@ export function renderSessionLine(ctx) {
         const pathLevels = ctx.config?.pathLevels ?? 1;
         // Always join with forward slash for consistent display
         // Handle root path (/) which results in empty segments
-        const projectPath = segments.length > 0 ? segments.slice(-pathLevels).join('/') : '/';
+        const projectPath = segments.length > 0 ? segments.slice(-pathLevels).join("/") : "/";
         projectPart = yellow(projectPath);
     }
-    let gitPart = '';
+    let gitPart = "";
     const gitConfig = ctx.config?.gitStatus;
     const showGit = gitConfig?.enabled ?? true;
     if (showGit && ctx.gitStatus) {
         const gitParts = [ctx.gitStatus.branch];
         // Show dirty indicator
         if ((gitConfig?.showDirty ?? true) && ctx.gitStatus.isDirty) {
-            gitParts.push('*');
+            gitParts.push("*");
         }
         // Show ahead/behind (with space separator for readability)
         if (gitConfig?.showAheadBehind) {
@@ -88,10 +90,10 @@ export function renderSessionLine(ctx) {
             if (untracked > 0)
                 statParts.push(`?${untracked}`);
             if (statParts.length > 0) {
-                gitParts.push(` ${statParts.join(' ')}`);
+                gitParts.push(` ${statParts.join(" ")}`);
             }
         }
-        gitPart = `${magenta('git:(')}${cyan(gitParts.join(''))}${magenta(')')}`;
+        gitPart = `${magenta("git:(")}${cyan(gitParts.join(""))}${magenta(")")}`;
     }
     if (projectPart && gitPart) {
         parts.push(`${projectPart} ${gitPart}`);
@@ -126,7 +128,9 @@ export function renderSessionLine(ctx) {
         }
     }
     // Usage limits display (shown when enabled in config, respects usageThreshold)
-    if (display?.showUsage !== false && ctx.usageData?.planName && !providerLabel) {
+    if (display?.showUsage !== false &&
+        ctx.usageData?.planName &&
+        !providerLabel) {
         if (ctx.usageData.apiUnavailable) {
             const errorHint = formatUsageError(ctx.usageData.apiError);
             parts.push(warning(`usage: ⚠${errorHint}`, colors));
@@ -135,7 +139,7 @@ export function renderSessionLine(ctx) {
             const resetTime = ctx.usageData.fiveHour === 100
                 ? formatResetTime(ctx.usageData.fiveHourResetAt)
                 : formatResetTime(ctx.usageData.sevenDayResetAt);
-            parts.push(critical(`⚠ Limit reached${resetTime ? ` (resets ${resetTime})` : ''}`, colors));
+            parts.push(critical(`⚠ Limit reached${resetTime ? ` (resets ${resetTime})` : ""}`, colors));
         }
         else {
             const usageThreshold = display?.usageThreshold ?? 0;
@@ -143,30 +147,30 @@ export function renderSessionLine(ctx) {
             const sevenDay = ctx.usageData.sevenDay;
             const effectiveUsage = Math.max(fiveHour ?? 0, sevenDay ?? 0);
             if (effectiveUsage >= usageThreshold) {
-                const syncingSuffix = ctx.usageData.apiError === 'rate-limited'
-                    ? ` ${dim('(syncing...)')}`
-                    : '';
+                const syncingSuffix = ctx.usageData.apiError === "rate-limited"
+                    ? ` ${dim("(syncing...)")}`
+                    : "";
                 const fiveHourDisplay = formatUsagePercent(fiveHour, colors);
                 const fiveHourReset = formatResetTime(ctx.usageData.fiveHourResetAt);
                 const usageBarEnabled = display?.usageBarEnabled ?? true;
                 const fiveHourPart = usageBarEnabled
-                    ? (fiveHourReset
-                        ? `${quotaBar(fiveHour ?? 0, barWidth, colors)} ${fiveHourDisplay} (${fiveHourReset} / 5h)`
-                        : `${quotaBar(fiveHour ?? 0, barWidth, colors)} ${fiveHourDisplay}`)
-                    : (fiveHourReset
+                    ? fiveHourReset
+                        ? `${quotaBar(fiveHour ?? 0, barWidth, colors, ctx.config?.barChars)} ${fiveHourDisplay} (${fiveHourReset} / 5h)`
+                        : `${quotaBar(fiveHour ?? 0, barWidth, colors, ctx.config?.barChars)} ${fiveHourDisplay}`
+                    : fiveHourReset
                         ? `5h: ${fiveHourDisplay} (${fiveHourReset})`
-                        : `5h: ${fiveHourDisplay}`);
+                        : `5h: ${fiveHourDisplay}`;
                 const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
                 if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
                     const sevenDayDisplay = formatUsagePercent(sevenDay, colors);
                     const sevenDayReset = formatResetTime(ctx.usageData.sevenDayResetAt);
                     const sevenDayPart = usageBarEnabled
-                        ? (sevenDayReset
-                            ? `${quotaBar(sevenDay, barWidth, colors)} ${sevenDayDisplay} (${sevenDayReset} / 7d)`
-                            : `${quotaBar(sevenDay, barWidth, colors)} ${sevenDayDisplay}`)
-                        : (sevenDayReset
+                        ? sevenDayReset
+                            ? `${quotaBar(sevenDay, barWidth, colors, ctx.config?.barChars)} ${sevenDayDisplay} (${sevenDayReset} / 7d)`
+                            : `${quotaBar(sevenDay, barWidth, colors, ctx.config?.barChars)} ${sevenDayDisplay}`
+                        : sevenDayReset
                             ? `7d: ${sevenDayDisplay} (${sevenDayReset})`
-                            : `7d: ${sevenDayDisplay}`);
+                            : `7d: ${sevenDayDisplay}`;
                     parts.push(`${fiveHourPart} | ${sevenDayPart}${syncingSuffix}`);
                 }
                 else {
@@ -193,13 +197,14 @@ export function renderSessionLine(ctx) {
     if (customLine) {
         parts.push(claudeOrange(customLine));
     }
-    let line = parts.join(' | ');
+    let line = parts.join(" | ");
     // Token breakdown at high context
     if (display?.showTokenBreakdown !== false && percent >= 85) {
         const usage = ctx.stdin.context_window?.current_usage;
         if (usage) {
             const input = formatTokens(usage.input_tokens ?? 0);
-            const cache = formatTokens((usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0));
+            const cache = formatTokens((usage.cache_creation_input_tokens ?? 0) +
+                (usage.cache_read_input_tokens ?? 0));
             line += dim(` (in: ${input}, cache: ${cache})`);
         }
     }
@@ -215,7 +220,7 @@ function formatTokens(n) {
     return n.toString();
 }
 function formatContextValue(ctx, percent, mode) {
-    if (mode === 'tokens') {
+    if (mode === "tokens") {
         const totalTokens = getTotalTokens(ctx.stdin);
         const size = ctx.stdin.context_window?.context_window_size ?? 0;
         if (size > 0) {
@@ -223,34 +228,34 @@ function formatContextValue(ctx, percent, mode) {
         }
         return formatTokens(totalTokens);
     }
-    if (mode === 'remaining') {
+    if (mode === "remaining") {
         return `${Math.max(0, 100 - percent)}%`;
     }
     return `${percent}%`;
 }
 function formatUsagePercent(percent, colors) {
     if (percent === null) {
-        return dim('--');
+        return dim("--");
     }
     const color = getQuotaColor(percent, colors);
     return `${color}${percent}%${RESET}`;
 }
 function formatUsageError(error) {
     if (!error)
-        return '';
-    if (error === 'rate-limited')
-        return ' (syncing...)';
-    if (error.startsWith('http-'))
+        return "";
+    if (error === "rate-limited")
+        return " (syncing...)";
+    if (error.startsWith("http-"))
         return ` (${error.slice(5)})`;
     return ` (${error})`;
 }
 function formatResetTime(resetAt) {
     if (!resetAt)
-        return '';
+        return "";
     const now = new Date();
     const diffMs = resetAt.getTime() - now.getTime();
     if (diffMs <= 0)
-        return '';
+        return "";
     const diffMins = Math.ceil(diffMs / 60000);
     if (diffMins < 60)
         return `${diffMins}m`;

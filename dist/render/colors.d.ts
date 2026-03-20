@@ -1,4 +1,4 @@
-import type { HudColorOverrides } from '../config.js';
+import type { HudColorOverrides } from "../config.js";
 export declare const RESET = "\u001B[0m";
 export declare function green(text: string): string;
 export declare function yellow(text: string): string;
@@ -11,6 +11,12 @@ export declare function warning(text: string, colors?: Partial<HudColorOverrides
 export declare function critical(text: string, colors?: Partial<HudColorOverrides>): string;
 export declare function getContextColor(percent: number, colors?: Partial<HudColorOverrides>): string;
 export declare function getQuotaColor(percent: number, colors?: Partial<HudColorOverrides>): string;
-export declare function quotaBar(percent: number, width?: number, colors?: Partial<HudColorOverrides>): string;
-export declare function coloredBar(percent: number, width?: number, colors?: Partial<HudColorOverrides>): string;
+export declare function quotaBar(percent: number, width?: number, colors?: Partial<HudColorOverrides>, barChars?: {
+    filled: string;
+    empty: string;
+}): string;
+export declare function coloredBar(percent: number, width?: number, colors?: Partial<HudColorOverrides>, barChars?: {
+    filled: string;
+    empty: string;
+}): string;
 //# sourceMappingURL=colors.d.ts.map

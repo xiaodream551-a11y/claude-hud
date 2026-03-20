@@ -1,28 +1,29 @@
-import { getContextPercent, getBufferedPercent, getTotalTokens } from '../../stdin.js';
-import { coloredBar, dim, getContextColor, RESET } from '../colors.js';
-import { getAdaptiveBarWidth } from '../../utils/terminal.js';
-const DEBUG = process.env.DEBUG?.includes('claude-hud') || process.env.DEBUG === '*';
+import { getContextPercent, getBufferedPercent, getTotalTokens, } from "../../stdin.js";
+import { coloredBar, dim, getContextColor, RESET } from "../colors.js";
+import { getAdaptiveBarWidth } from "../../utils/terminal.js";
+const DEBUG = process.env.DEBUG?.includes("claude-hud") || process.env.DEBUG === "*";
 export function renderIdentityLine(ctx) {
     const rawPercent = getContextPercent(ctx.stdin);
     const bufferedPercent = getBufferedPercent(ctx.stdin);
-    const autocompactMode = ctx.config?.display?.autocompactBuffer ?? 'enabled';
-    const percent = autocompactMode === 'disabled' ? rawPercent : bufferedPercent;
+    const autocompactMode = ctx.config?.display?.autocompactBuffer ?? "enabled";
+    const percent = autocompactMode === "disabled" ? rawPercent : bufferedPercent;
     const colors = ctx.config?.colors;
-    if (DEBUG && autocompactMode === 'disabled') {
+    if (DEBUG && autocompactMode === "disabled") {
         console.error(`[claude-hud:context] autocompactBuffer=disabled, showing raw ${rawPercent}% (buffered would be ${bufferedPercent}%)`);
     }
     const display = ctx.config?.display;
-    const contextValueMode = display?.contextValue ?? 'percent';
+    const contextValueMode = display?.contextValue ?? "percent";
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
     const contextValueDisplay = `${getContextColor(percent, colors)}${contextValue}${RESET}`;
     let line = display?.showContextBar !== false
-        ? `${dim('Context')} ${coloredBar(percent, getAdaptiveBarWidth(), colors)} ${contextValueDisplay}`
-        : `${dim('Context')} ${contextValueDisplay}`;
+        ? `${dim("Context")} ${coloredBar(percent, getAdaptiveBarWidth(), colors, ctx.config?.barChars)} ${contextValueDisplay}`
+        : `${dim("Context")} ${contextValueDisplay}`;
     if (display?.showTokenBreakdown !== false && percent >= 85) {
         const usage = ctx.stdin.context_window?.current_usage;
         if (usage) {
             const input = formatTokens(usage.input_tokens ?? 0);
-            const cache = formatTokens((usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0));
+            const cache = formatTokens((usage.cache_creation_input_tokens ?? 0) +
+                (usage.cache_read_input_tokens ?? 0));
             line += dim(` (in: ${input}, cache: ${cache})`);
         }
     }
@@ -38,7 +39,7 @@ function formatTokens(n) {
     return n.toString();
 }
 function formatContextValue(ctx, percent, mode) {
-    if (mode === 'tokens') {
+    if (mode === "tokens") {
         const totalTokens = getTotalTokens(ctx.stdin);
         const size = ctx.stdin.context_window?.context_window_size ?? 0;
         if (size > 0) {
@@ -46,7 +47,7 @@ function formatContextValue(ctx, percent, mode) {
         }
         return formatTokens(totalTokens);
     }
-    if (mode === 'remaining') {
+    if (mode === "remaining") {
         return `${Math.max(0, 100 - percent)}%`;
     }
     return `${percent}%`;

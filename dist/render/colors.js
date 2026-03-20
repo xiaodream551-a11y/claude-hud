@@ -1,13 +1,13 @@
-export const RESET = '\x1b[0m';
-const DIM = '\x1b[2m';
-const RED = '\x1b[31m';
-const GREEN = '\x1b[32m';
-const YELLOW = '\x1b[33m';
-const MAGENTA = '\x1b[35m';
-const CYAN = '\x1b[36m';
-const BRIGHT_BLUE = '\x1b[94m';
-const BRIGHT_MAGENTA = '\x1b[95m';
-const CLAUDE_ORANGE = '\x1b[38;5;208m';
+export const RESET = "\x1b[0m";
+const DIM = "\x1b[2m";
+const RED = "\x1b[31m";
+const GREEN = "\x1b[32m";
+const YELLOW = "\x1b[33m";
+const MAGENTA = "\x1b[35m";
+const CYAN = "\x1b[36m";
+const BRIGHT_BLUE = "\x1b[94m";
+const BRIGHT_MAGENTA = "\x1b[95m";
+const CLAUDE_ORANGE = "\x1b[38;5;208m";
 const ANSI_BY_NAME = {
     red: RED,
     green: GREEN,
@@ -32,10 +32,12 @@ function resolveAnsi(value, fallback) {
     if (value === undefined || value === null) {
         return fallback;
     }
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
         return `\x1b[38;5;${value}m`;
     }
-    if (typeof value === 'string' && value.startsWith('#') && value.length === 7) {
+    if (typeof value === "string" &&
+        value.startsWith("#") &&
+        value.length === 7) {
         return hexToAnsi(value);
     }
     return ANSI_BY_NAME[value] ?? fallback;
@@ -84,20 +86,28 @@ export function getQuotaColor(percent, colors) {
         return resolveAnsi(colors?.usageWarning, BRIGHT_MAGENTA);
     return resolveAnsi(colors?.usage, BRIGHT_BLUE);
 }
-export function quotaBar(percent, width = 10, colors) {
+export function quotaBar(percent, width = 10, colors, barChars) {
     const safeWidth = Number.isFinite(width) ? Math.max(0, Math.round(width)) : 0;
-    const safePercent = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0;
+    const safePercent = Number.isFinite(percent)
+        ? Math.min(100, Math.max(0, percent))
+        : 0;
     const filled = Math.round((safePercent / 100) * safeWidth);
     const empty = safeWidth - filled;
     const color = getQuotaColor(safePercent, colors);
-    return `${color}${'█'.repeat(filled)}${DIM}${'░'.repeat(empty)}${RESET}`;
+    const filledChar = barChars?.filled ?? "▰";
+    const emptyChar = barChars?.empty ?? "▱";
+    return `${color}${filledChar.repeat(filled)}${DIM}${emptyChar.repeat(empty)}${RESET}`;
 }
-export function coloredBar(percent, width = 10, colors) {
+export function coloredBar(percent, width = 10, colors, barChars) {
     const safeWidth = Number.isFinite(width) ? Math.max(0, Math.round(width)) : 0;
-    const safePercent = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0;
+    const safePercent = Number.isFinite(percent)
+        ? Math.min(100, Math.max(0, percent))
+        : 0;
     const filled = Math.round((safePercent / 100) * safeWidth);
     const empty = safeWidth - filled;
     const color = getContextColor(safePercent, colors);
-    return `${color}${'█'.repeat(filled)}${DIM}${'░'.repeat(empty)}${RESET}`;
+    const filledChar = barChars?.filled ?? "▰";
+    const emptyChar = barChars?.empty ?? "▱";
+    return `${color}${filledChar.repeat(filled)}${DIM}${emptyChar.repeat(empty)}${RESET}`;
 }
 //# sourceMappingURL=colors.js.map

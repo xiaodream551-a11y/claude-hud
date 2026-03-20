@@ -1,21 +1,28 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as os from 'node:os';
-import { getHudPluginDir } from './claude-config-dir.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
+import { getHudPluginDir } from "./claude-config-dir.js";
 
-export type LineLayoutType = 'compact' | 'expanded';
+export type LineLayoutType = "compact" | "expanded";
 
-export type AutocompactBufferMode = 'enabled' | 'disabled';
-export type ContextValueMode = 'percent' | 'tokens' | 'remaining';
-export type HudElement = 'project' | 'context' | 'usage' | 'environment' | 'tools' | 'agents' | 'todos';
+export type AutocompactBufferMode = "enabled" | "disabled";
+export type ContextValueMode = "percent" | "tokens" | "remaining";
+export type HudElement =
+  | "project"
+  | "context"
+  | "usage"
+  | "environment"
+  | "tools"
+  | "agents"
+  | "todos";
 export type HudColorName =
-  | 'red'
-  | 'green'
-  | 'yellow'
-  | 'magenta'
-  | 'cyan'
-  | 'brightBlue'
-  | 'brightMagenta';
+  | "red"
+  | "green"
+  | "yellow"
+  | "magenta"
+  | "cyan"
+  | "brightBlue"
+  | "brightMagenta";
 
 /** A color value: named preset, 256-color index (0-255), or hex string (#rrggbb). */
 export type HudColorValue = HudColorName | number | string;
@@ -29,13 +36,13 @@ export interface HudColorOverrides {
 }
 
 export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
-  'project',
-  'context',
-  'usage',
-  'environment',
-  'tools',
-  'agents',
-  'todos',
+  "project",
+  "context",
+  "usage",
+  "environment",
+  "tools",
+  "agents",
+  "todos",
 ];
 
 const KNOWN_ELEMENTS = new Set<HudElement>(DEFAULT_ELEMENT_ORDER);
@@ -77,10 +84,14 @@ export interface HudConfig {
     failureCacheTtlSeconds: number;
   };
   colors: HudColorOverrides;
+  barChars: {
+    filled: string;
+    empty: string;
+  };
 }
 
 export const DEFAULT_CONFIG: HudConfig = {
-  lineLayout: 'expanded',
+  lineLayout: "expanded",
   showSeparators: false,
   pathLevels: 1,
   elementOrder: [...DEFAULT_ELEMENT_ORDER],
@@ -94,7 +105,7 @@ export const DEFAULT_CONFIG: HudConfig = {
     showModel: true,
     showProject: true,
     showContextBar: true,
-    contextValue: 'percent',
+    contextValue: "percent",
     showConfigCounts: false,
     showDuration: false,
     showSpeed: false,
@@ -105,28 +116,32 @@ export const DEFAULT_CONFIG: HudConfig = {
     showAgents: false,
     showTodos: false,
     showSessionName: false,
-    autocompactBuffer: 'enabled',
+    autocompactBuffer: "enabled",
     usageThreshold: 0,
     sevenDayThreshold: 80,
     environmentThreshold: 0,
-    customLine: '',
+    customLine: "",
   },
   usage: {
     cacheTtlSeconds: 60,
     failureCacheTtlSeconds: 15,
   },
   colors: {
-    context: 'green',
-    usage: 'brightBlue',
-    warning: 'yellow',
-    usageWarning: 'brightMagenta',
-    critical: 'red',
+    context: "green",
+    usage: "brightBlue",
+    warning: "yellow",
+    usageWarning: "brightMagenta",
+    critical: "red",
+  },
+  barChars: {
+    filled: "▰",
+    empty: "▱",
   },
 };
 
 export function getConfigPath(): string {
   const homeDir = os.homedir();
-  return path.join(getHudPluginDir(homeDir), 'config.json');
+  return path.join(getHudPluginDir(homeDir), "config.json");
 }
 
 function validatePathLevels(value: unknown): value is 1 | 2 | 3 {
@@ -134,33 +149,43 @@ function validatePathLevels(value: unknown): value is 1 | 2 | 3 {
 }
 
 function validateLineLayout(value: unknown): value is LineLayoutType {
-  return value === 'compact' || value === 'expanded';
+  return value === "compact" || value === "expanded";
 }
 
-function validateAutocompactBuffer(value: unknown): value is AutocompactBufferMode {
-  return value === 'enabled' || value === 'disabled';
+function validateAutocompactBuffer(
+  value: unknown,
+): value is AutocompactBufferMode {
+  return value === "enabled" || value === "disabled";
 }
 
 function validateContextValue(value: unknown): value is ContextValueMode {
-  return value === 'percent' || value === 'tokens' || value === 'remaining';
+  return value === "percent" || value === "tokens" || value === "remaining";
 }
 
 function validateColorName(value: unknown): value is HudColorName {
-  return value === 'red'
-    || value === 'green'
-    || value === 'yellow'
-    || value === 'magenta'
-    || value === 'cyan'
-    || value === 'brightBlue'
-    || value === 'brightMagenta';
+  return (
+    value === "red" ||
+    value === "green" ||
+    value === "yellow" ||
+    value === "magenta" ||
+    value === "cyan" ||
+    value === "brightBlue" ||
+    value === "brightMagenta"
+  );
 }
 
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 function validateColorValue(value: unknown): value is HudColorValue {
   if (validateColorName(value)) return true;
-  if (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 255) return true;
-  if (typeof value === 'string' && HEX_COLOR_PATTERN.test(value)) return true;
+  if (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= 255
+  )
+    return true;
+  if (typeof value === "string" && HEX_COLOR_PATTERN.test(value)) return true;
   return false;
 }
 
@@ -173,7 +198,7 @@ function validateElementOrder(value: unknown): HudElement[] {
   const elementOrder: HudElement[] = [];
 
   for (const item of value) {
-    if (typeof item !== 'string' || !KNOWN_ELEMENTS.has(item as HudElement)) {
+    if (typeof item !== "string" || !KNOWN_ELEMENTS.has(item as HudElement)) {
       continue;
     }
 
@@ -190,28 +215,36 @@ function validateElementOrder(value: unknown): HudElement[] {
 }
 
 interface LegacyConfig {
-  layout?: 'default' | 'separators' | Record<string, unknown>;
+  layout?: "default" | "separators" | Record<string, unknown>;
 }
 
-function migrateConfig(userConfig: Partial<HudConfig> & LegacyConfig): Partial<HudConfig> {
+function migrateConfig(
+  userConfig: Partial<HudConfig> & LegacyConfig,
+): Partial<HudConfig> {
   const migrated = { ...userConfig } as Partial<HudConfig> & LegacyConfig;
 
-  if ('layout' in userConfig && !('lineLayout' in userConfig)) {
-    if (typeof userConfig.layout === 'string') {
+  if ("layout" in userConfig && !("lineLayout" in userConfig)) {
+    if (typeof userConfig.layout === "string") {
       // Legacy string migration (v0.0.x → v0.1.x)
-      if (userConfig.layout === 'separators') {
-        migrated.lineLayout = 'compact';
+      if (userConfig.layout === "separators") {
+        migrated.lineLayout = "compact";
         migrated.showSeparators = true;
       } else {
-        migrated.lineLayout = 'compact';
+        migrated.lineLayout = "compact";
         migrated.showSeparators = false;
       }
-    } else if (typeof userConfig.layout === 'object' && userConfig.layout !== null) {
+    } else if (
+      typeof userConfig.layout === "object" &&
+      userConfig.layout !== null
+    ) {
       // Object layout written by third-party tools — extract nested fields
       const obj = userConfig.layout as Record<string, unknown>;
-      if (typeof obj.lineLayout === 'string') migrated.lineLayout = obj.lineLayout as any;
-      if (typeof obj.showSeparators === 'boolean') migrated.showSeparators = obj.showSeparators;
-      if (typeof obj.pathLevels === 'number') migrated.pathLevels = obj.pathLevels as any;
+      if (typeof obj.lineLayout === "string")
+        migrated.lineLayout = obj.lineLayout as any;
+      if (typeof obj.showSeparators === "boolean")
+        migrated.showSeparators = obj.showSeparators;
+      if (typeof obj.pathLevels === "number")
+        migrated.pathLevels = obj.pathLevels as any;
     }
     delete migrated.layout;
   }
@@ -220,12 +253,13 @@ function migrateConfig(userConfig: Partial<HudConfig> & LegacyConfig): Partial<H
 }
 
 function validateThreshold(value: unknown, max = 100): number {
-  if (typeof value !== 'number') return 0;
+  if (typeof value !== "number") return 0;
   return Math.max(0, Math.min(max, value));
 }
 
 function validatePositiveInt(value: unknown, defaultValue: number): number {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) return defaultValue;
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0)
+    return defaultValue;
   return value;
 }
 
@@ -236,9 +270,10 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     ? migrated.lineLayout
     : DEFAULT_CONFIG.lineLayout;
 
-  const showSeparators = typeof migrated.showSeparators === 'boolean'
-    ? migrated.showSeparators
-    : DEFAULT_CONFIG.showSeparators;
+  const showSeparators =
+    typeof migrated.showSeparators === "boolean"
+      ? migrated.showSeparators
+      : DEFAULT_CONFIG.showSeparators;
 
   const pathLevels = validatePathLevels(migrated.pathLevels)
     ? migrated.pathLevels
@@ -247,82 +282,108 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
   const elementOrder = validateElementOrder(migrated.elementOrder);
 
   const gitStatus = {
-    enabled: typeof migrated.gitStatus?.enabled === 'boolean'
-      ? migrated.gitStatus.enabled
-      : DEFAULT_CONFIG.gitStatus.enabled,
-    showDirty: typeof migrated.gitStatus?.showDirty === 'boolean'
-      ? migrated.gitStatus.showDirty
-      : DEFAULT_CONFIG.gitStatus.showDirty,
-    showAheadBehind: typeof migrated.gitStatus?.showAheadBehind === 'boolean'
-      ? migrated.gitStatus.showAheadBehind
-      : DEFAULT_CONFIG.gitStatus.showAheadBehind,
-    showFileStats: typeof migrated.gitStatus?.showFileStats === 'boolean'
-      ? migrated.gitStatus.showFileStats
-      : DEFAULT_CONFIG.gitStatus.showFileStats,
+    enabled:
+      typeof migrated.gitStatus?.enabled === "boolean"
+        ? migrated.gitStatus.enabled
+        : DEFAULT_CONFIG.gitStatus.enabled,
+    showDirty:
+      typeof migrated.gitStatus?.showDirty === "boolean"
+        ? migrated.gitStatus.showDirty
+        : DEFAULT_CONFIG.gitStatus.showDirty,
+    showAheadBehind:
+      typeof migrated.gitStatus?.showAheadBehind === "boolean"
+        ? migrated.gitStatus.showAheadBehind
+        : DEFAULT_CONFIG.gitStatus.showAheadBehind,
+    showFileStats:
+      typeof migrated.gitStatus?.showFileStats === "boolean"
+        ? migrated.gitStatus.showFileStats
+        : DEFAULT_CONFIG.gitStatus.showFileStats,
   };
 
   const display = {
-    showModel: typeof migrated.display?.showModel === 'boolean'
-      ? migrated.display.showModel
-      : DEFAULT_CONFIG.display.showModel,
-    showProject: typeof migrated.display?.showProject === 'boolean'
-      ? migrated.display.showProject
-      : DEFAULT_CONFIG.display.showProject,
-    showContextBar: typeof migrated.display?.showContextBar === 'boolean'
-      ? migrated.display.showContextBar
-      : DEFAULT_CONFIG.display.showContextBar,
+    showModel:
+      typeof migrated.display?.showModel === "boolean"
+        ? migrated.display.showModel
+        : DEFAULT_CONFIG.display.showModel,
+    showProject:
+      typeof migrated.display?.showProject === "boolean"
+        ? migrated.display.showProject
+        : DEFAULT_CONFIG.display.showProject,
+    showContextBar:
+      typeof migrated.display?.showContextBar === "boolean"
+        ? migrated.display.showContextBar
+        : DEFAULT_CONFIG.display.showContextBar,
     contextValue: validateContextValue(migrated.display?.contextValue)
       ? migrated.display.contextValue
       : DEFAULT_CONFIG.display.contextValue,
-    showConfigCounts: typeof migrated.display?.showConfigCounts === 'boolean'
-      ? migrated.display.showConfigCounts
-      : DEFAULT_CONFIG.display.showConfigCounts,
-    showDuration: typeof migrated.display?.showDuration === 'boolean'
-      ? migrated.display.showDuration
-      : DEFAULT_CONFIG.display.showDuration,
-    showSpeed: typeof migrated.display?.showSpeed === 'boolean'
-      ? migrated.display.showSpeed
-      : DEFAULT_CONFIG.display.showSpeed,
-    showTokenBreakdown: typeof migrated.display?.showTokenBreakdown === 'boolean'
-      ? migrated.display.showTokenBreakdown
-      : DEFAULT_CONFIG.display.showTokenBreakdown,
-    showUsage: typeof migrated.display?.showUsage === 'boolean'
-      ? migrated.display.showUsage
-      : DEFAULT_CONFIG.display.showUsage,
-    usageBarEnabled: typeof migrated.display?.usageBarEnabled === 'boolean'
-      ? migrated.display.usageBarEnabled
-      : DEFAULT_CONFIG.display.usageBarEnabled,
-    showTools: typeof migrated.display?.showTools === 'boolean'
-      ? migrated.display.showTools
-      : DEFAULT_CONFIG.display.showTools,
-    showAgents: typeof migrated.display?.showAgents === 'boolean'
-      ? migrated.display.showAgents
-      : DEFAULT_CONFIG.display.showAgents,
-    showTodos: typeof migrated.display?.showTodos === 'boolean'
-      ? migrated.display.showTodos
-      : DEFAULT_CONFIG.display.showTodos,
-    showSessionName: typeof migrated.display?.showSessionName === 'boolean'
-      ? migrated.display.showSessionName
-      : DEFAULT_CONFIG.display.showSessionName,
-    autocompactBuffer: validateAutocompactBuffer(migrated.display?.autocompactBuffer)
+    showConfigCounts:
+      typeof migrated.display?.showConfigCounts === "boolean"
+        ? migrated.display.showConfigCounts
+        : DEFAULT_CONFIG.display.showConfigCounts,
+    showDuration:
+      typeof migrated.display?.showDuration === "boolean"
+        ? migrated.display.showDuration
+        : DEFAULT_CONFIG.display.showDuration,
+    showSpeed:
+      typeof migrated.display?.showSpeed === "boolean"
+        ? migrated.display.showSpeed
+        : DEFAULT_CONFIG.display.showSpeed,
+    showTokenBreakdown:
+      typeof migrated.display?.showTokenBreakdown === "boolean"
+        ? migrated.display.showTokenBreakdown
+        : DEFAULT_CONFIG.display.showTokenBreakdown,
+    showUsage:
+      typeof migrated.display?.showUsage === "boolean"
+        ? migrated.display.showUsage
+        : DEFAULT_CONFIG.display.showUsage,
+    usageBarEnabled:
+      typeof migrated.display?.usageBarEnabled === "boolean"
+        ? migrated.display.usageBarEnabled
+        : DEFAULT_CONFIG.display.usageBarEnabled,
+    showTools:
+      typeof migrated.display?.showTools === "boolean"
+        ? migrated.display.showTools
+        : DEFAULT_CONFIG.display.showTools,
+    showAgents:
+      typeof migrated.display?.showAgents === "boolean"
+        ? migrated.display.showAgents
+        : DEFAULT_CONFIG.display.showAgents,
+    showTodos:
+      typeof migrated.display?.showTodos === "boolean"
+        ? migrated.display.showTodos
+        : DEFAULT_CONFIG.display.showTodos,
+    showSessionName:
+      typeof migrated.display?.showSessionName === "boolean"
+        ? migrated.display.showSessionName
+        : DEFAULT_CONFIG.display.showSessionName,
+    autocompactBuffer: validateAutocompactBuffer(
+      migrated.display?.autocompactBuffer,
+    )
       ? migrated.display.autocompactBuffer
       : DEFAULT_CONFIG.display.autocompactBuffer,
     usageThreshold: validateThreshold(migrated.display?.usageThreshold, 100),
-    sevenDayThreshold: validateThreshold(migrated.display?.sevenDayThreshold, 100),
-    environmentThreshold: validateThreshold(migrated.display?.environmentThreshold, 100),
-    customLine: typeof migrated.display?.customLine === 'string'
-      ? migrated.display.customLine.slice(0, 80)
-      : DEFAULT_CONFIG.display.customLine,
+    sevenDayThreshold: validateThreshold(
+      migrated.display?.sevenDayThreshold,
+      100,
+    ),
+    environmentThreshold: validateThreshold(
+      migrated.display?.environmentThreshold,
+      100,
+    ),
+    customLine:
+      typeof migrated.display?.customLine === "string"
+        ? migrated.display.customLine.slice(0, 80)
+        : DEFAULT_CONFIG.display.customLine,
   };
 
   const usage = {
     cacheTtlSeconds: validatePositiveInt(
       migrated.usage?.cacheTtlSeconds,
-      DEFAULT_CONFIG.usage.cacheTtlSeconds
+      DEFAULT_CONFIG.usage.cacheTtlSeconds,
     ),
     failureCacheTtlSeconds: validatePositiveInt(
       migrated.usage?.failureCacheTtlSeconds,
-      DEFAULT_CONFIG.usage.failureCacheTtlSeconds
+      DEFAULT_CONFIG.usage.failureCacheTtlSeconds,
     ),
   };
 
@@ -344,7 +405,30 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
       : DEFAULT_CONFIG.colors.critical,
   };
 
-  return { lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, usage, colors };
+  const barChars = {
+    filled:
+      typeof migrated.barChars?.filled === "string" &&
+      migrated.barChars.filled.length === 1
+        ? migrated.barChars.filled
+        : DEFAULT_CONFIG.barChars.filled,
+    empty:
+      typeof migrated.barChars?.empty === "string" &&
+      migrated.barChars.empty.length === 1
+        ? migrated.barChars.empty
+        : DEFAULT_CONFIG.barChars.empty,
+  };
+
+  return {
+    lineLayout,
+    showSeparators,
+    pathLevels,
+    elementOrder,
+    gitStatus,
+    display,
+    usage,
+    colors,
+    barChars,
+  };
 }
 
 export async function loadConfig(): Promise<HudConfig> {
@@ -355,7 +439,7 @@ export async function loadConfig(): Promise<HudConfig> {
       return DEFAULT_CONFIG;
     }
 
-    const content = fs.readFileSync(configPath, 'utf-8');
+    const content = fs.readFileSync(configPath, "utf-8");
     const userConfig = JSON.parse(content) as Partial<HudConfig>;
     return mergeConfig(userConfig);
   } catch {

@@ -1,4 +1,4 @@
-import type { RenderContext } from '../types.js';
+import type { RenderContext } from "../types.js";
 /**
  * Renders the full session line (model + context bar + project + git + counts + usage + duration).
  * Used for compact layout mode.

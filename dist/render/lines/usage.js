@@ -1,7 +1,7 @@
-import { isLimitReached } from '../../types.js';
-import { getProviderLabel } from '../../stdin.js';
-import { critical, warning, dim, getQuotaColor, quotaBar, RESET } from '../colors.js';
-import { getAdaptiveBarWidth } from '../../utils/terminal.js';
+import { isLimitReached } from "../../types.js";
+import { getProviderLabel } from "../../stdin.js";
+import { critical, warning, dim, getQuotaColor, quotaBar, RESET, } from "../colors.js";
+import { getAdaptiveBarWidth } from "../../utils/terminal.js";
 export function renderUsageLine(ctx) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
@@ -14,7 +14,7 @@ export function renderUsageLine(ctx) {
     if (getProviderLabel(ctx.stdin)) {
         return null;
     }
-    const label = dim('Usage');
+    const label = dim("Usage");
     if (ctx.usageData.apiUnavailable) {
         const errorHint = formatUsageError(ctx.usageData.apiError);
         return `${label} ${warning(`⚠${errorHint}`, colors)}`;
@@ -23,7 +23,7 @@ export function renderUsageLine(ctx) {
         const resetTime = ctx.usageData.fiveHour === 100
             ? formatResetTime(ctx.usageData.fiveHourResetAt)
             : formatResetTime(ctx.usageData.sevenDayResetAt);
-        return `${label} ${critical(`⚠ Limit reached${resetTime ? ` (resets ${resetTime})` : ''}`, colors)}`;
+        return `${label} ${critical(`⚠ Limit reached${resetTime ? ` (resets ${resetTime})` : ""}`, colors)}`;
     }
     const threshold = display?.usageThreshold ?? 0;
     const fiveHour = ctx.usageData.fiveHour;
@@ -36,53 +36,51 @@ export function renderUsageLine(ctx) {
     const fiveHourReset = formatResetTime(ctx.usageData.fiveHourResetAt);
     const usageBarEnabled = display?.usageBarEnabled ?? true;
     const fiveHourPart = usageBarEnabled
-        ? (fiveHourReset
-            ? `${quotaBar(fiveHour ?? 0, getAdaptiveBarWidth(), colors)} ${fiveHourDisplay} (resets in ${fiveHourReset})`
-            : `${quotaBar(fiveHour ?? 0, getAdaptiveBarWidth(), colors)} ${fiveHourDisplay}`)
-        : (fiveHourReset
+        ? fiveHourReset
+            ? `${quotaBar(fiveHour ?? 0, getAdaptiveBarWidth(), colors, ctx.config?.barChars)} ${fiveHourDisplay} (resets in ${fiveHourReset})`
+            : `${quotaBar(fiveHour ?? 0, getAdaptiveBarWidth(), colors, ctx.config?.barChars)} ${fiveHourDisplay}`
+        : fiveHourReset
             ? `5h: ${fiveHourDisplay} (resets in ${fiveHourReset})`
-            : `5h: ${fiveHourDisplay}`);
+            : `5h: ${fiveHourDisplay}`;
     const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
-    const syncingSuffix = ctx.usageData.apiError === 'rate-limited'
-        ? ` ${dim('(syncing...)')}`
-        : '';
+    const syncingSuffix = ctx.usageData.apiError === "rate-limited" ? ` ${dim("(syncing...)")}` : "";
     if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
         const sevenDayDisplay = formatUsagePercent(sevenDay, colors);
         const sevenDayReset = formatResetTime(ctx.usageData.sevenDayResetAt);
         const sevenDayPart = usageBarEnabled
-            ? (sevenDayReset
-                ? `${quotaBar(sevenDay, getAdaptiveBarWidth(), colors)} ${sevenDayDisplay} (resets in ${sevenDayReset})`
-                : `${quotaBar(sevenDay, getAdaptiveBarWidth(), colors)} ${sevenDayDisplay}`)
-            : (sevenDayReset
+            ? sevenDayReset
+                ? `${quotaBar(sevenDay, getAdaptiveBarWidth(), colors, ctx.config?.barChars)} ${sevenDayDisplay} (resets in ${sevenDayReset})`
+                : `${quotaBar(sevenDay, getAdaptiveBarWidth(), colors, ctx.config?.barChars)} ${sevenDayDisplay}`
+            : sevenDayReset
                 ? `7d: ${sevenDayDisplay} (resets in ${sevenDayReset})`
-                : `7d: ${sevenDayDisplay}`);
+                : `7d: ${sevenDayDisplay}`;
         return `${label} ${fiveHourPart} | ${sevenDayPart}${syncingSuffix}`;
     }
     return `${label} ${fiveHourPart}${syncingSuffix}`;
 }
 function formatUsagePercent(percent, colors) {
     if (percent === null) {
-        return dim('--');
+        return dim("--");
     }
     const color = getQuotaColor(percent, colors);
     return `${color}${percent}%${RESET}`;
 }
 function formatUsageError(error) {
     if (!error)
-        return '';
-    if (error === 'rate-limited')
-        return ' (syncing...)';
-    if (error.startsWith('http-'))
+        return "";
+    if (error === "rate-limited")
+        return " (syncing...)";
+    if (error.startsWith("http-"))
         return ` (${error.slice(5)})`;
     return ` (${error})`;
 }
 function formatResetTime(resetAt) {
     if (!resetAt)
-        return '';
+        return "";
     const now = new Date();
     const diffMs = resetAt.getTime() - now.getTime();
     if (diffMs <= 0)
-        return '';
+        return "";
     const diffMins = Math.ceil(diffMs / 60000);
     if (diffMins < 60)
         return `${diffMins}m`;
