@@ -1,8 +1,9 @@
 import { isLimitReached } from "../types.js";
 import { getContextPercent, getBufferedPercent, getModelName, getProviderLabel, getTotalTokens, } from "../stdin.js";
 import { getOutputSpeed } from "../speed-tracker.js";
-import { coloredBar, critical, cyan, dim, magenta, red, warning, yellow, getContextColor, getQuotaColor, quotaBar, claudeOrange, RESET, } from "./colors.js";
+import { coloredBar, critical, cyan, dim, magenta, red, warning, yellow, getContextColor, getQuotaColor, quotaBar, claudeOrange, gitBranchColor, speedColor, RESET, } from "./colors.js";
 import { getAdaptiveBarWidth } from "../utils/terminal.js";
+import { icon } from "./icons.js";
 const DEBUG = process.env.DEBUG?.includes("claude-hud") || process.env.DEBUG === "*";
 /**
  * Renders the full session line (model + context bar + project + git + counts + usage + duration).
@@ -22,9 +23,11 @@ export function renderSessionLine(ctx) {
     const bar = coloredBar(percent, barWidth, colors, ctx.config?.barChars);
     const parts = [];
     const display = ctx.config?.display;
+    const nf = display?.useNerdFont ?? false;
     const contextValueMode = display?.contextValue ?? "percent";
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
-    const contextValueDisplay = `${getContextColor(percent, colors)}${contextValue}${RESET}`;
+    const isGradient = ctx.config?.barChars?.style !== "solid";
+    const contextValueDisplay = `${getContextColor(percent, colors, isGradient)}${contextValue}${RESET}`;
     // Model and context bar (FIRST)
     // Plan name only shows if showUsage is enabled (respects hybrid toggle)
     const providerLabel = getProviderLabel(ctx.stdin);
@@ -57,7 +60,8 @@ export function renderSessionLine(ctx) {
         // Always join with forward slash for consistent display
         // Handle root path (/) which results in empty segments
         const projectPath = segments.length > 0 ? segments.slice(-pathLevels).join("/") : "/";
-        projectPart = yellow(projectPath);
+        const folderIcon = icon("folder", nf);
+        projectPart = yellow(folderIcon ? `${folderIcon} ${projectPath}` : projectPath);
     }
     let gitPart = "";
     const gitConfig = ctx.config?.gitStatus;
@@ -93,7 +97,10 @@ export function renderSessionLine(ctx) {
                 gitParts.push(` ${statParts.join(" ")}`);
             }
         }
-        gitPart = `${magenta("git:(")}${cyan(gitParts.join(""))}${magenta(")")}`;
+        const gitIcon = icon("git", nf);
+        gitPart = nf
+            ? `${magenta(gitIcon)} ${gitBranchColor(gitParts.join(""), ctx.gitStatus.isDirty, ctx.gitStatus.branch)}`
+            : `${magenta("git:(")}${gitBranchColor(gitParts.join(""), ctx.gitStatus.isDirty, ctx.gitStatus.branch)}${magenta(")")}`;
     }
     if (projectPart && gitPart) {
         parts.push(`${projectPart} ${gitPart}`);
@@ -114,16 +121,20 @@ export function renderSessionLine(ctx) {
         const envThreshold = display?.environmentThreshold ?? 0;
         if (totalCounts > 0 && totalCounts >= envThreshold) {
             if (ctx.claudeMdCount > 0) {
-                parts.push(dim(`${ctx.claudeMdCount} CLAUDE.md`));
+                const i = icon("file", nf);
+                parts.push(dim(nf ? `${i} ${ctx.claudeMdCount}` : `${ctx.claudeMdCount} CLAUDE.md`));
             }
             if (ctx.rulesCount > 0) {
-                parts.push(dim(`${ctx.rulesCount} rules`));
+                const i = icon("rules", nf);
+                parts.push(dim(nf ? `${i} ${ctx.rulesCount}` : `${ctx.rulesCount} rules`));
             }
             if (ctx.mcpCount > 0) {
-                parts.push(dim(`${ctx.mcpCount} MCPs`));
+                const i = icon("mcp", nf);
+                parts.push(dim(nf ? `${i} ${ctx.mcpCount}` : `${ctx.mcpCount} MCPs`));
             }
             if (ctx.hooksCount > 0) {
-                parts.push(dim(`${ctx.hooksCount} hooks`));
+                const i = icon("hooks", nf);
+                parts.push(dim(nf ? `${i} ${ctx.hooksCount}` : `${ctx.hooksCount} hooks`));
             }
         }
     }
@@ -150,7 +161,7 @@ export function renderSessionLine(ctx) {
                 const syncingSuffix = ctx.usageData.apiError === "rate-limited"
                     ? ` ${dim("(syncing...)")}`
                     : "";
-                const fiveHourDisplay = formatUsagePercent(fiveHour, colors);
+                const fiveHourDisplay = formatUsagePercent(fiveHour, colors, isGradient);
                 const fiveHourReset = formatResetTime(ctx.usageData.fiveHourResetAt);
                 const usageBarEnabled = display?.usageBarEnabled ?? true;
                 const fiveHourPart = usageBarEnabled
@@ -162,7 +173,7 @@ export function renderSessionLine(ctx) {
                         : `5h: ${fiveHourDisplay}`;
                 const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
                 if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-                    const sevenDayDisplay = formatUsagePercent(sevenDay, colors);
+                    const sevenDayDisplay = formatUsagePercent(sevenDay, colors, isGradient);
                     const sevenDayReset = formatResetTime(ctx.usageData.sevenDayResetAt);
                     const sevenDayPart = usageBarEnabled
                         ? sevenDayReset
@@ -183,11 +194,11 @@ export function renderSessionLine(ctx) {
     if (display?.showSpeed) {
         const speed = getOutputSpeed(ctx.stdin);
         if (speed !== null) {
-            parts.push(dim(`out: ${speed.toFixed(1)} tok/s`));
+            parts.push(speedColor(`out: ${speed.toFixed(1)} tok/s`, speed));
         }
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(dim(`⏱️  ${ctx.sessionDuration}`));
+        parts.push(dim(`${icon("clock", nf)} ${ctx.sessionDuration}`));
     }
     if (ctx.extraLabel) {
         parts.push(dim(ctx.extraLabel));
@@ -233,11 +244,11 @@ function formatContextValue(ctx, percent, mode) {
     }
     return `${percent}%`;
 }
-function formatUsagePercent(percent, colors) {
+function formatUsagePercent(percent, colors, gradient) {
     if (percent === null) {
         return dim("--");
     }
-    const color = getQuotaColor(percent, colors);
+    const color = getQuotaColor(percent, colors, gradient);
     return `${color}${percent}%${RESET}`;
 }
 function formatUsageError(error) {

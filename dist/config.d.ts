@@ -44,6 +44,7 @@ export interface HudConfig {
         sevenDayThreshold: number;
         environmentThreshold: number;
         customLine: string;
+        useNerdFont: boolean;
     };
     usage: {
         cacheTtlSeconds: number;
@@ -53,6 +54,7 @@ export interface HudConfig {
     barChars: {
         filled: string;
         empty: string;
+        style: "gradient" | "solid";
     };
 }
 export declare const DEFAULT_CONFIG: HudConfig;

@@ -43,6 +43,7 @@ export const DEFAULT_CONFIG = {
         sevenDayThreshold: 80,
         environmentThreshold: 0,
         customLine: "",
+        useNerdFont: false,
     },
     usage: {
         cacheTtlSeconds: 60,
@@ -56,8 +57,9 @@ export const DEFAULT_CONFIG = {
         critical: "red",
     },
     barChars: {
-        filled: "▰",
-        empty: "▱",
+        filled: "━",
+        empty: "━",
+        style: "gradient",
     },
 };
 export function getConfigPath() {
@@ -234,6 +236,9 @@ export function mergeConfig(userConfig) {
         customLine: typeof migrated.display?.customLine === "string"
             ? migrated.display.customLine.slice(0, 80)
             : DEFAULT_CONFIG.display.customLine,
+        useNerdFont: typeof migrated.display?.useNerdFont === "boolean"
+            ? migrated.display.useNerdFont
+            : DEFAULT_CONFIG.display.useNerdFont,
     };
     const usage = {
         cacheTtlSeconds: validatePositiveInt(migrated.usage?.cacheTtlSeconds, DEFAULT_CONFIG.usage.cacheTtlSeconds),
@@ -265,6 +270,10 @@ export function mergeConfig(userConfig) {
             migrated.barChars.empty.length === 1
             ? migrated.barChars.empty
             : DEFAULT_CONFIG.barChars.empty,
+        style: migrated.barChars?.style === "gradient" ||
+            migrated.barChars?.style === "solid"
+            ? migrated.barChars.style
+            : DEFAULT_CONFIG.barChars.style,
     };
     return {
         lineLayout,

@@ -21,9 +21,12 @@ import {
   getQuotaColor,
   quotaBar,
   claudeOrange,
+  gitBranchColor,
+  speedColor,
   RESET,
 } from "./colors.js";
 import { getAdaptiveBarWidth } from "../utils/terminal.js";
+import { icon } from "./icons.js";
 
 const DEBUG =
   process.env.DEBUG?.includes("claude-hud") || process.env.DEBUG === "*";
@@ -52,9 +55,11 @@ export function renderSessionLine(ctx: RenderContext): string {
 
   const parts: string[] = [];
   const display = ctx.config?.display;
+  const nf = display?.useNerdFont ?? false;
   const contextValueMode = display?.contextValue ?? "percent";
   const contextValue = formatContextValue(ctx, percent, contextValueMode);
-  const contextValueDisplay = `${getContextColor(percent, colors)}${contextValue}${RESET}`;
+  const isGradient = ctx.config?.barChars?.style !== "solid";
+  const contextValueDisplay = `${getContextColor(percent, colors, isGradient)}${contextValue}${RESET}`;
 
   // Model and context bar (FIRST)
   // Plan name only shows if showUsage is enabled (respects hybrid toggle)
@@ -88,7 +93,10 @@ export function renderSessionLine(ctx: RenderContext): string {
     // Handle root path (/) which results in empty segments
     const projectPath =
       segments.length > 0 ? segments.slice(-pathLevels).join("/") : "/";
-    projectPart = yellow(projectPath);
+    const folderIcon = icon("folder", nf);
+    projectPart = yellow(
+      folderIcon ? `${folderIcon} ${projectPath}` : projectPath,
+    );
   }
 
   let gitPart = "";
@@ -126,7 +134,10 @@ export function renderSessionLine(ctx: RenderContext): string {
       }
     }
 
-    gitPart = `${magenta("git:(")}${cyan(gitParts.join(""))}${magenta(")")}`;
+    const gitIcon = icon("git", nf);
+    gitPart = nf
+      ? `${magenta(gitIcon)} ${gitBranchColor(gitParts.join(""), ctx.gitStatus.isDirty, ctx.gitStatus.branch)}`
+      : `${magenta("git:(")}${gitBranchColor(gitParts.join(""), ctx.gitStatus.isDirty, ctx.gitStatus.branch)}${magenta(")")}`;
   }
 
   if (projectPart && gitPart) {
@@ -150,19 +161,31 @@ export function renderSessionLine(ctx: RenderContext): string {
 
     if (totalCounts > 0 && totalCounts >= envThreshold) {
       if (ctx.claudeMdCount > 0) {
-        parts.push(dim(`${ctx.claudeMdCount} CLAUDE.md`));
+        const i = icon("file", nf);
+        parts.push(
+          dim(
+            nf ? `${i} ${ctx.claudeMdCount}` : `${ctx.claudeMdCount} CLAUDE.md`,
+          ),
+        );
       }
 
       if (ctx.rulesCount > 0) {
-        parts.push(dim(`${ctx.rulesCount} rules`));
+        const i = icon("rules", nf);
+        parts.push(
+          dim(nf ? `${i} ${ctx.rulesCount}` : `${ctx.rulesCount} rules`),
+        );
       }
 
       if (ctx.mcpCount > 0) {
-        parts.push(dim(`${ctx.mcpCount} MCPs`));
+        const i = icon("mcp", nf);
+        parts.push(dim(nf ? `${i} ${ctx.mcpCount}` : `${ctx.mcpCount} MCPs`));
       }
 
       if (ctx.hooksCount > 0) {
-        parts.push(dim(`${ctx.hooksCount} hooks`));
+        const i = icon("hooks", nf);
+        parts.push(
+          dim(nf ? `${i} ${ctx.hooksCount}` : `${ctx.hooksCount} hooks`),
+        );
       }
     }
   }
@@ -198,7 +221,11 @@ export function renderSessionLine(ctx: RenderContext): string {
           ctx.usageData.apiError === "rate-limited"
             ? ` ${dim("(syncing...)")}`
             : "";
-        const fiveHourDisplay = formatUsagePercent(fiveHour, colors);
+        const fiveHourDisplay = formatUsagePercent(
+          fiveHour,
+          colors,
+          isGradient,
+        );
         const fiveHourReset = formatResetTime(ctx.usageData.fiveHourResetAt);
 
         const usageBarEnabled = display?.usageBarEnabled ?? true;
@@ -212,7 +239,11 @@ export function renderSessionLine(ctx: RenderContext): string {
 
         const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
         if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-          const sevenDayDisplay = formatUsagePercent(sevenDay, colors);
+          const sevenDayDisplay = formatUsagePercent(
+            sevenDay,
+            colors,
+            isGradient,
+          );
           const sevenDayReset = formatResetTime(ctx.usageData.sevenDayResetAt);
           const sevenDayPart = usageBarEnabled
             ? sevenDayReset
@@ -233,12 +264,12 @@ export function renderSessionLine(ctx: RenderContext): string {
   if (display?.showSpeed) {
     const speed = getOutputSpeed(ctx.stdin);
     if (speed !== null) {
-      parts.push(dim(`out: ${speed.toFixed(1)} tok/s`));
+      parts.push(speedColor(`out: ${speed.toFixed(1)} tok/s`, speed));
     }
   }
 
   if (display?.showDuration !== false && ctx.sessionDuration) {
-    parts.push(dim(`⏱️  ${ctx.sessionDuration}`));
+    parts.push(dim(`${icon("clock", nf)} ${ctx.sessionDuration}`));
   }
 
   if (ctx.extraLabel) {
@@ -303,11 +334,12 @@ function formatContextValue(
 function formatUsagePercent(
   percent: number | null,
   colors?: RenderContext["config"]["colors"],
+  gradient?: boolean,
 ): string {
   if (percent === null) {
     return dim("--");
   }
-  const color = getQuotaColor(percent, colors);
+  const color = getQuotaColor(percent, colors, gradient);
   return `${color}${percent}%${RESET}`;
 }
 

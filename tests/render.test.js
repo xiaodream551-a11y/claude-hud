@@ -1169,9 +1169,10 @@ test("renderSessionLine uses custom warning and critical colors for usage states
   );
 });
 
-test("renderUsageLine uses custom usage palette overrides", () => {
+test("renderUsageLine uses custom usage palette overrides (solid mode)", () => {
   const ctx = baseContext();
   ctx.config.display.usageBarEnabled = true;
+  ctx.config.barChars = { filled: "━", empty: "━", style: "solid" };
   ctx.config.colors = {
     context: "green",
     usage: "cyan",
@@ -1190,7 +1191,7 @@ test("renderUsageLine uses custom usage palette overrides", () => {
   const line = renderUsageLine(ctx);
   assert.ok(line, "should render usage line");
   assert.ok(
-    line.includes("\x1b[36m▰▰▰"),
+    line.includes("\x1b[36m━━━"),
     `expected custom usage bar color, got: ${JSON.stringify(line)}`,
   );
   assert.ok(
@@ -1198,12 +1199,37 @@ test("renderUsageLine uses custom usage palette overrides", () => {
     `expected custom usage percentage color, got: ${JSON.stringify(line)}`,
   );
   assert.ok(
-    line.includes("\x1b[35m▰▰▰▰▰▰▰▰"),
+    line.includes("\x1b[35m━━━━━━━━"),
     `expected custom usage warning color, got: ${JSON.stringify(line)}`,
   );
   assert.ok(
     line.includes("\x1b[35m80%\x1b[0m"),
     `expected custom usage warning percentage color, got: ${JSON.stringify(line)}`,
+  );
+});
+
+test("renderUsageLine renders gradient bars by default", () => {
+  const ctx = baseContext();
+  ctx.config.display.usageBarEnabled = true;
+  ctx.config.barChars = { filled: "━", empty: "━", style: "gradient" };
+  ctx.usageData = {
+    planName: "Pro",
+    fiveHour: 50,
+    sevenDay: 0,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+  };
+
+  const line = renderUsageLine(ctx);
+  assert.ok(line, "should render usage line");
+  // Gradient mode uses truecolor sequences \x1b[38;2;R;G;Bm per character
+  assert.ok(
+    line.includes("\x1b[38;2;"),
+    `expected truecolor gradient sequences, got: ${JSON.stringify(line)}`,
+  );
+  assert.ok(
+    line.includes("50%"),
+    `expected percentage display, got: ${JSON.stringify(line)}`,
   );
 });
 

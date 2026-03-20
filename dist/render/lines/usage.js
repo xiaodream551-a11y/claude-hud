@@ -2,6 +2,7 @@ import { isLimitReached } from "../../types.js";
 import { getProviderLabel } from "../../stdin.js";
 import { critical, warning, dim, getQuotaColor, quotaBar, RESET, } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
+import { icon } from "../icons.js";
 export function renderUsageLine(ctx) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
@@ -14,7 +15,8 @@ export function renderUsageLine(ctx) {
     if (getProviderLabel(ctx.stdin)) {
         return null;
     }
-    const label = dim("Usage");
+    const nf = display?.useNerdFont ?? false;
+    const label = dim(icon("usage", nf));
     if (ctx.usageData.apiUnavailable) {
         const errorHint = formatUsageError(ctx.usageData.apiError);
         return `${label} ${warning(`⚠${errorHint}`, colors)}`;
@@ -32,7 +34,8 @@ export function renderUsageLine(ctx) {
     if (effectiveUsage < threshold) {
         return null;
     }
-    const fiveHourDisplay = formatUsagePercent(ctx.usageData.fiveHour, colors);
+    const isGradient = ctx.config?.barChars?.style !== "solid";
+    const fiveHourDisplay = formatUsagePercent(ctx.usageData.fiveHour, colors, isGradient);
     const fiveHourReset = formatResetTime(ctx.usageData.fiveHourResetAt);
     const usageBarEnabled = display?.usageBarEnabled ?? true;
     const fiveHourPart = usageBarEnabled
@@ -45,7 +48,7 @@ export function renderUsageLine(ctx) {
     const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
     const syncingSuffix = ctx.usageData.apiError === "rate-limited" ? ` ${dim("(syncing...)")}` : "";
     if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-        const sevenDayDisplay = formatUsagePercent(sevenDay, colors);
+        const sevenDayDisplay = formatUsagePercent(sevenDay, colors, isGradient);
         const sevenDayReset = formatResetTime(ctx.usageData.sevenDayResetAt);
         const sevenDayPart = usageBarEnabled
             ? sevenDayReset
@@ -58,11 +61,11 @@ export function renderUsageLine(ctx) {
     }
     return `${label} ${fiveHourPart}${syncingSuffix}`;
 }
-function formatUsagePercent(percent, colors) {
+function formatUsagePercent(percent, colors, gradient) {
     if (percent === null) {
         return dim("--");
     }
-    const color = getQuotaColor(percent, colors);
+    const color = getQuotaColor(percent, colors, gradient);
     return `${color}${percent}%${RESET}`;
 }
 function formatUsageError(error) {

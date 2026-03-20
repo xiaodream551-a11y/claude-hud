@@ -1,6 +1,8 @@
-import { dim } from '../colors.js';
+import { dim } from "../colors.js";
+import { icon } from "../icons.js";
 export function renderEnvironmentLine(ctx) {
     const display = ctx.config?.display;
+    const nf = display?.useNerdFont ?? false;
     if (display?.showConfigCounts === false) {
         return null;
     }
@@ -11,20 +13,24 @@ export function renderEnvironmentLine(ctx) {
     }
     const parts = [];
     if (ctx.claudeMdCount > 0) {
-        parts.push(`${ctx.claudeMdCount} CLAUDE.md`);
+        const i = icon("file", nf);
+        parts.push(nf ? `${i} ${ctx.claudeMdCount}` : `${ctx.claudeMdCount} CLAUDE.md`);
     }
     if (ctx.rulesCount > 0) {
-        parts.push(`${ctx.rulesCount} rules`);
+        const i = icon("rules", nf);
+        parts.push(nf ? `${i} ${ctx.rulesCount}` : `${ctx.rulesCount} rules`);
     }
     if (ctx.mcpCount > 0) {
-        parts.push(`${ctx.mcpCount} MCPs`);
+        const i = icon("mcp", nf);
+        parts.push(nf ? `${i} ${ctx.mcpCount}` : `${ctx.mcpCount} MCPs`);
     }
     if (ctx.hooksCount > 0) {
-        parts.push(`${ctx.hooksCount} hooks`);
+        const i = icon("hooks", nf);
+        parts.push(nf ? `${i} ${ctx.hooksCount}` : `${ctx.hooksCount} hooks`);
     }
     if (parts.length === 0) {
         return null;
     }
-    return dim(parts.join(' | '));
+    return dim(parts.join(" | "));
 }
 //# sourceMappingURL=environment.js.map

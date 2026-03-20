@@ -78,6 +78,7 @@ export interface HudConfig {
     sevenDayThreshold: number;
     environmentThreshold: number;
     customLine: string;
+    useNerdFont: boolean;
   };
   usage: {
     cacheTtlSeconds: number;
@@ -87,6 +88,7 @@ export interface HudConfig {
   barChars: {
     filled: string;
     empty: string;
+    style: "gradient" | "solid";
   };
 }
 
@@ -121,6 +123,7 @@ export const DEFAULT_CONFIG: HudConfig = {
     sevenDayThreshold: 80,
     environmentThreshold: 0,
     customLine: "",
+    useNerdFont: false,
   },
   usage: {
     cacheTtlSeconds: 60,
@@ -134,8 +137,9 @@ export const DEFAULT_CONFIG: HudConfig = {
     critical: "red",
   },
   barChars: {
-    filled: "▰",
-    empty: "▱",
+    filled: "━",
+    empty: "━",
+    style: "gradient",
   },
 };
 
@@ -374,6 +378,10 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
       typeof migrated.display?.customLine === "string"
         ? migrated.display.customLine.slice(0, 80)
         : DEFAULT_CONFIG.display.customLine,
+    useNerdFont:
+      typeof migrated.display?.useNerdFont === "boolean"
+        ? migrated.display.useNerdFont
+        : DEFAULT_CONFIG.display.useNerdFont,
   };
 
   const usage = {
@@ -416,6 +424,11 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
       migrated.barChars.empty.length === 1
         ? migrated.barChars.empty
         : DEFAULT_CONFIG.barChars.empty,
+    style:
+      migrated.barChars?.style === "gradient" ||
+      migrated.barChars?.style === "solid"
+        ? migrated.barChars.style
+        : DEFAULT_CONFIG.barChars.style,
   };
 
   return {

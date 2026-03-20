@@ -10,6 +10,7 @@ import {
   RESET,
 } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
+import { icon } from "../icons.js";
 
 export function renderUsageLine(ctx: RenderContext): string | null {
   const display = ctx.config?.display;
@@ -27,7 +28,8 @@ export function renderUsageLine(ctx: RenderContext): string | null {
     return null;
   }
 
-  const label = dim("Usage");
+  const nf = display?.useNerdFont ?? false;
+  const label = dim(icon("usage", nf));
 
   if (ctx.usageData.apiUnavailable) {
     const errorHint = formatUsageError(ctx.usageData.apiError);
@@ -51,7 +53,12 @@ export function renderUsageLine(ctx: RenderContext): string | null {
     return null;
   }
 
-  const fiveHourDisplay = formatUsagePercent(ctx.usageData.fiveHour, colors);
+  const isGradient = ctx.config?.barChars?.style !== "solid";
+  const fiveHourDisplay = formatUsagePercent(
+    ctx.usageData.fiveHour,
+    colors,
+    isGradient,
+  );
   const fiveHourReset = formatResetTime(ctx.usageData.fiveHourResetAt);
 
   const usageBarEnabled = display?.usageBarEnabled ?? true;
@@ -67,7 +74,7 @@ export function renderUsageLine(ctx: RenderContext): string | null {
   const syncingSuffix =
     ctx.usageData.apiError === "rate-limited" ? ` ${dim("(syncing...)")}` : "";
   if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-    const sevenDayDisplay = formatUsagePercent(sevenDay, colors);
+    const sevenDayDisplay = formatUsagePercent(sevenDay, colors, isGradient);
     const sevenDayReset = formatResetTime(ctx.usageData.sevenDayResetAt);
     const sevenDayPart = usageBarEnabled
       ? sevenDayReset
@@ -85,11 +92,12 @@ export function renderUsageLine(ctx: RenderContext): string | null {
 function formatUsagePercent(
   percent: number | null,
   colors?: RenderContext["config"]["colors"],
+  gradient?: boolean,
 ): string {
   if (percent === null) {
     return dim("--");
   }
-  const color = getQuotaColor(percent, colors);
+  const color = getQuotaColor(percent, colors, gradient);
   return `${color}${percent}%${RESET}`;
 }
 

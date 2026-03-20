@@ -1,6 +1,7 @@
 import { getContextPercent, getBufferedPercent, getTotalTokens, } from "../../stdin.js";
 import { coloredBar, dim, getContextColor, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
+import { icon } from "../icons.js";
 const DEBUG = process.env.DEBUG?.includes("claude-hud") || process.env.DEBUG === "*";
 export function renderIdentityLine(ctx) {
     const rawPercent = getContextPercent(ctx.stdin);
@@ -14,10 +15,11 @@ export function renderIdentityLine(ctx) {
     const display = ctx.config?.display;
     const contextValueMode = display?.contextValue ?? "percent";
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
-    const contextValueDisplay = `${getContextColor(percent, colors)}${contextValue}${RESET}`;
+    const isGradient = ctx.config?.barChars?.style !== "solid";
+    const contextValueDisplay = `${getContextColor(percent, colors, isGradient)}${contextValue}${RESET}`;
     let line = display?.showContextBar !== false
-        ? `${dim("Context")} ${coloredBar(percent, getAdaptiveBarWidth(), colors, ctx.config?.barChars)} ${contextValueDisplay}`
-        : `${dim("Context")} ${contextValueDisplay}`;
+        ? `${dim(icon("context", display?.useNerdFont ?? false))} ${coloredBar(percent, getAdaptiveBarWidth(), colors, ctx.config?.barChars)} ${contextValueDisplay}`
+        : `${dim(icon("context", display?.useNerdFont ?? false))} ${contextValueDisplay}`;
     if (display?.showTokenBreakdown !== false && percent >= 85) {
         const usage = ctx.stdin.context_window?.current_usage;
         if (usage) {

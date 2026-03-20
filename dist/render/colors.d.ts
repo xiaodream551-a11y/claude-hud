@@ -9,14 +9,23 @@ export declare function dim(text: string): string;
 export declare function claudeOrange(text: string): string;
 export declare function warning(text: string, colors?: Partial<HudColorOverrides>): string;
 export declare function critical(text: string, colors?: Partial<HudColorOverrides>): string;
-export declare function getContextColor(percent: number, colors?: Partial<HudColorOverrides>): string;
-export declare function getQuotaColor(percent: number, colors?: Partial<HudColorOverrides>): string;
-export declare function quotaBar(percent: number, width?: number, colors?: Partial<HudColorOverrides>, barChars?: {
+/**
+ * Colorize git branch name by repo state.
+ * green = clean, yellow = dirty, red = detached HEAD
+ */
+export declare function gitBranchColor(text: string, isDirty: boolean, branch: string): string;
+/**
+ * Colorize speed value: fast(≥40)=green → medium(20)=yellow → slow(<5)=red
+ */
+export declare function speedColor(text: string, tokPerSec: number): string;
+export declare function getContextColor(percent: number, colors?: Partial<HudColorOverrides>, gradient?: boolean): string;
+export declare function getQuotaColor(percent: number, colors?: Partial<HudColorOverrides>, gradient?: boolean): string;
+type BarCharsConfig = {
     filled: string;
     empty: string;
-}): string;
-export declare function coloredBar(percent: number, width?: number, colors?: Partial<HudColorOverrides>, barChars?: {
-    filled: string;
-    empty: string;
-}): string;
+    style?: "gradient" | "solid";
+};
+export declare function quotaBar(percent: number, width?: number, colors?: Partial<HudColorOverrides>, barChars?: BarCharsConfig): string;
+export declare function coloredBar(percent: number, width?: number, colors?: Partial<HudColorOverrides>, barChars?: BarCharsConfig): string;
+export {};
 //# sourceMappingURL=colors.d.ts.map

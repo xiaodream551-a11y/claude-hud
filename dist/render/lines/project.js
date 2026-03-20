@@ -1,8 +1,10 @@
-import { getModelName, getProviderLabel } from '../../stdin.js';
-import { getOutputSpeed } from '../../speed-tracker.js';
-import { cyan, dim, magenta, yellow, red, claudeOrange } from '../colors.js';
+import { getModelName, getProviderLabel } from "../../stdin.js";
+import { getOutputSpeed } from "../../speed-tracker.js";
+import { cyan, dim, magenta, yellow, red, claudeOrange, gitBranchColor, speedColor, } from "../colors.js";
+import { icon } from "../icons.js";
 export function renderProjectLine(ctx) {
     const display = ctx.config?.display;
+    const nf = display?.useNerdFont ?? false;
     const parts = [];
     if (display?.showModel !== false) {
         const model = getModelName(ctx.stdin);
@@ -10,7 +12,9 @@ export function renderProjectLine(ctx) {
         const showUsage = display?.showUsage !== false;
         const planName = showUsage ? ctx.usageData?.planName : undefined;
         const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
-        const billingLabel = showUsage ? (planName ?? (hasApiKey ? red('API') : undefined)) : undefined;
+        const billingLabel = showUsage
+            ? (planName ?? (hasApiKey ? red("API") : undefined))
+            : undefined;
         const planDisplay = providerLabel ?? billingLabel;
         const modelDisplay = planDisplay ? `${model} | ${planDisplay}` : model;
         parts.push(cyan(`[${modelDisplay}]`));
@@ -19,16 +23,17 @@ export function renderProjectLine(ctx) {
     if (display?.showProject !== false && ctx.stdin.cwd) {
         const segments = ctx.stdin.cwd.split(/[/\\]/).filter(Boolean);
         const pathLevels = ctx.config?.pathLevels ?? 1;
-        const projectPath = segments.length > 0 ? segments.slice(-pathLevels).join('/') : '/';
-        projectPart = yellow(projectPath);
+        const projectPath = segments.length > 0 ? segments.slice(-pathLevels).join("/") : "/";
+        const folderIcon = icon("folder", nf);
+        projectPart = yellow(folderIcon ? `${folderIcon} ${projectPath}` : projectPath);
     }
-    let gitPart = '';
+    let gitPart = "";
     const gitConfig = ctx.config?.gitStatus;
     const showGit = gitConfig?.enabled ?? true;
     if (showGit && ctx.gitStatus) {
         const gitParts = [ctx.gitStatus.branch];
         if ((gitConfig?.showDirty ?? true) && ctx.gitStatus.isDirty) {
-            gitParts.push('*');
+            gitParts.push("*");
         }
         if (gitConfig?.showAheadBehind) {
             if (ctx.gitStatus.ahead > 0) {
@@ -50,10 +55,13 @@ export function renderProjectLine(ctx) {
             if (untracked > 0)
                 statParts.push(`?${untracked}`);
             if (statParts.length > 0) {
-                gitParts.push(` ${statParts.join(' ')}`);
+                gitParts.push(` ${statParts.join(" ")}`);
             }
         }
-        gitPart = `${magenta('git:(')}${cyan(gitParts.join(''))}${magenta(')')}`;
+        const gitIcon = icon("git", nf);
+        gitPart = nf
+            ? `${magenta(gitIcon)} ${gitBranchColor(gitParts.join(""), ctx.gitStatus.isDirty, ctx.gitStatus.branch)}`
+            : `${magenta("git:(")}${gitBranchColor(gitParts.join(""), ctx.gitStatus.isDirty, ctx.gitStatus.branch)}${magenta(")")}`;
     }
     if (projectPart && gitPart) {
         parts.push(`${projectPart} ${gitPart}`);
@@ -73,11 +81,11 @@ export function renderProjectLine(ctx) {
     if (display?.showSpeed) {
         const speed = getOutputSpeed(ctx.stdin);
         if (speed !== null) {
-            parts.push(dim(`out: ${speed.toFixed(1)} tok/s`));
+            parts.push(speedColor(`out: ${speed.toFixed(1)} tok/s`, speed));
         }
     }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(dim(`⏱️  ${ctx.sessionDuration}`));
+        parts.push(dim(`${icon("clock", nf)} ${ctx.sessionDuration}`));
     }
     const customLine = display?.customLine;
     if (customLine) {
@@ -86,6 +94,6 @@ export function renderProjectLine(ctx) {
     if (parts.length === 0) {
         return null;
     }
-    return parts.join(' \u2502 ');
+    return parts.join(" \u2502 ");
 }
 //# sourceMappingURL=project.js.map
