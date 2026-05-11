@@ -7,6 +7,7 @@ export type LineLayoutType = "compact" | "expanded";
 
 export type AutocompactBufferMode = "enabled" | "disabled";
 export type ContextValueMode = "percent" | "tokens" | "remaining";
+export type UsageValueMode = "percent" | "remaining";
 export type HudElement =
   | "project"
   | "context"
@@ -68,6 +69,7 @@ export interface HudConfig {
     showSpeed: boolean;
     showTokenBreakdown: boolean;
     showUsage: boolean;
+    usageValue: UsageValueMode;
     usageBarEnabled: boolean;
     showTools: boolean;
     showAgents: boolean;
@@ -113,6 +115,7 @@ export const DEFAULT_CONFIG: HudConfig = {
     showSpeed: false,
     showTokenBreakdown: true,
     showUsage: true,
+    usageValue: "percent",
     usageBarEnabled: true,
     showTools: false,
     showAgents: false,
@@ -164,6 +167,10 @@ function validateAutocompactBuffer(
 
 function validateContextValue(value: unknown): value is ContextValueMode {
   return value === "percent" || value === "tokens" || value === "remaining";
+}
+
+function validateUsageValue(value: unknown): value is UsageValueMode {
+  return value === "percent" || value === "remaining";
 }
 
 function validateColorName(value: unknown): value is HudColorName {
@@ -340,6 +347,9 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
       typeof migrated.display?.showUsage === "boolean"
         ? migrated.display.showUsage
         : DEFAULT_CONFIG.display.showUsage,
+    usageValue: validateUsageValue(migrated.display?.usageValue)
+      ? migrated.display.usageValue
+      : DEFAULT_CONFIG.display.usageValue,
     usageBarEnabled:
       typeof migrated.display?.usageBarEnabled === "boolean"
         ? migrated.display.usageBarEnabled

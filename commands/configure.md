@@ -15,8 +15,9 @@ These are always enabled and NOT configurable:
 - Model name `[Opus]`
 - Context bar `████░░░░░░ 45%`
 
-Advanced settings such as `colors.*`, `pathLevels`, `display.usageThreshold`, and
-`display.environmentThreshold` are preserved when saving but are not edited by this guided flow.
+Advanced settings such as `colors.*`, `pathLevels`, `display.usageThreshold`,
+`display.usageValue`, and `display.environmentThreshold` are preserved when
+saving but are not edited by this guided flow.
 
 ---
 
@@ -211,6 +212,7 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 | Output speed | `display.showSpeed` |
 | Usage limits | `display.showUsage` |
 | Usage bar style | `display.usageBarEnabled` |
+| Usage value | `display.usageValue` |
 | Session name | `display.showSessionName` |
 | Session duration | `display.showDuration` |
 | Custom line | `display.customLine` |
@@ -229,6 +231,7 @@ If user chooses "Remove", set `display.customLine` to `""` in config.
 | Text style | `display.usageBarEnabled: false` — Shows `5h: 25% (1h 30m)` |
 
 **Note**: Usage style only applies when `display.showUsage: true`. When 7d usage >= 80%, it also shows with the same style.
+Set `display.usageValue: "remaining"` manually to show remaining quota percentages while keeping warning thresholds based on used quota.
 
 ---
 

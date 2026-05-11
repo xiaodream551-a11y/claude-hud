@@ -67,6 +67,7 @@ function baseContext() {
         showSpeed: false,
         showTokenBreakdown: true,
         showUsage: true,
+        usageValue: "percent",
         usageBarEnabled: false,
         showTools: true,
         showAgents: true,
@@ -837,6 +838,23 @@ test("renderSessionLine displays usage percentages (7d hidden when low)", () => 
   assert.ok(line.includes("6%"), "should include 5h percentage");
 });
 
+test("renderSessionLine supports remaining-based usage display", () => {
+  const ctx = baseContext();
+  ctx.config.display.usageValue = "remaining";
+  ctx.config.display.sevenDayThreshold = 80;
+  ctx.usageData = {
+    planName: "Pro",
+    fiveHour: 25,
+    sevenDay: 85,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+  };
+
+  const line = stripAnsi(renderSessionLine(ctx));
+  assert.ok(line.includes("5h: 75%"), `should show remaining 5h usage: ${line}`);
+  assert.ok(line.includes("7d: 15%"), `should show remaining 7d usage: ${line}`);
+});
+
 test("renderSessionLine shows 7d when approaching limit (>=80%)", () => {
   const ctx = baseContext();
   ctx.config.display.sevenDayThreshold = 80;
@@ -956,6 +974,39 @@ test("renderUsageLine shows 7d reset countdown in text-only mode", () => {
   assert.ok(
     line.includes("(resets in 1d 4h)"),
     `should include 7d reset countdown in text-only mode: ${line}`,
+  );
+});
+
+test("renderUsageLine supports remaining-based usage display with used-percent colors", () => {
+  const ctx = baseContext();
+  ctx.config.display.usageBarEnabled = false;
+  ctx.config.display.usageValue = "remaining";
+  ctx.config.display.sevenDayThreshold = 80;
+  ctx.config.barChars = { filled: "━", empty: "━", style: "solid" };
+  ctx.config.colors = {
+    context: "green",
+    usage: "cyan",
+    warning: "yellow",
+    usageWarning: "magenta",
+    critical: "red",
+  };
+  ctx.usageData = {
+    planName: "Pro",
+    fiveHour: 25,
+    sevenDay: 85,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+  };
+
+  const line = renderUsageLine(ctx);
+  assert.ok(line, "should render usage line");
+  assert.ok(
+    line.includes("\x1b[36m75%\x1b[0m"),
+    `expected remaining 5h usage with normal usage color, got: ${JSON.stringify(line)}`,
+  );
+  assert.ok(
+    line.includes("\x1b[35m15%\x1b[0m"),
+    `expected remaining 7d usage with used-percent warning color, got: ${JSON.stringify(line)}`,
   );
 });
 

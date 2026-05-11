@@ -33,6 +33,7 @@ export const DEFAULT_CONFIG = {
         showSpeed: false,
         showTokenBreakdown: true,
         showUsage: true,
+        usageValue: "percent",
         usageBarEnabled: true,
         showTools: false,
         showAgents: false,
@@ -77,6 +78,9 @@ function validateAutocompactBuffer(value) {
 }
 function validateContextValue(value) {
     return value === "percent" || value === "tokens" || value === "remaining";
+}
+function validateUsageValue(value) {
+    return value === "percent" || value === "remaining";
 }
 function validateColorName(value) {
     return (value === "red" ||
@@ -212,6 +216,9 @@ export function mergeConfig(userConfig) {
         showUsage: typeof migrated.display?.showUsage === "boolean"
             ? migrated.display.showUsage
             : DEFAULT_CONFIG.display.showUsage,
+        usageValue: validateUsageValue(migrated.display?.usageValue)
+            ? migrated.display.usageValue
+            : DEFAULT_CONFIG.display.usageValue,
         usageBarEnabled: typeof migrated.display?.usageBarEnabled === "boolean"
             ? migrated.display.usageBarEnabled
             : DEFAULT_CONFIG.display.usageBarEnabled,

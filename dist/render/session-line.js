@@ -161,7 +161,8 @@ export function renderSessionLine(ctx) {
                 const syncingSuffix = ctx.usageData.apiError === "rate-limited"
                     ? ` ${dim("(syncing...)")}`
                     : "";
-                const fiveHourDisplay = formatUsagePercent(fiveHour, colors, isGradient);
+                const usageValueMode = display?.usageValue ?? "percent";
+                const fiveHourDisplay = formatUsagePercent(fiveHour, colors, isGradient, usageValueMode);
                 const fiveHourReset = formatResetTime(ctx.usageData.fiveHourResetAt);
                 const usageBarEnabled = display?.usageBarEnabled ?? true;
                 const fiveHourPart = usageBarEnabled
@@ -173,7 +174,7 @@ export function renderSessionLine(ctx) {
                         : `5h: ${fiveHourDisplay}`;
                 const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
                 if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
-                    const sevenDayDisplay = formatUsagePercent(sevenDay, colors, isGradient);
+                    const sevenDayDisplay = formatUsagePercent(sevenDay, colors, isGradient, usageValueMode);
                     const sevenDayReset = formatResetTime(ctx.usageData.sevenDayResetAt);
                     const sevenDayPart = usageBarEnabled
                         ? sevenDayReset
@@ -244,12 +245,13 @@ function formatContextValue(ctx, percent, mode) {
     }
     return `${percent}%`;
 }
-function formatUsagePercent(percent, colors, gradient) {
+function formatUsagePercent(percent, colors, gradient, mode = "percent") {
     if (percent === null) {
         return dim("--");
     }
     const color = getQuotaColor(percent, colors, gradient);
-    return `${color}${percent}%${RESET}`;
+    const displayPercent = mode === "remaining" ? Math.max(0, 100 - percent) : percent;
+    return `${color}${displayPercent}%${RESET}`;
 }
 function formatUsageError(error) {
     if (!error)
